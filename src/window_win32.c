@@ -23,15 +23,15 @@ void win32_paint(HWND hwnd) {
         BITMAPINFO bmi = {0};
         bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
         bmi.bmiHeader.biWidth       = (LONG)g_buffer_width;
-        bmi.bmiHeader.biHeight      = -(LONG)g_buffer_height; // Négatif = Haut en bas
+        bmi.bmiHeader.biHeight      = -(LONG)g_buffer_height;
         bmi.bmiHeader.biPlanes      = 1;
-        bmi.bmiHeader.biBitCount    = 32;                     // Toujours 32-bit ici !
+        bmi.bmiHeader.biBitCount    = 32;
         bmi.bmiHeader.biCompression = BI_RGB;
 
         StretchDIBits(
             hdc,
-            0, 0, g_client_width, g_client_height, // Taille de la fenêtre
-            0, 0, g_buffer_width, g_buffer_height, // Taille de la texture d'origine
+            0, 0, g_client_width, g_client_height,
+            0, 0, g_buffer_width, g_buffer_height,
             g_screen_buffer,
             &bmi, DIB_RGB_COLORS, SRCCOPY
         );
@@ -115,7 +115,7 @@ uint8_t window_process_events(void) {
 }
 
 void window_render_from_texture(const void *pixels, size_t width, size_t height, int bpp) {
-    if (!pixels) return;
+    if(!pixels) return;
 
     if(g_buffer_width != width || g_buffer_height != height || !g_screen_buffer) {
         g_screen_buffer = realloc(g_screen_buffer, width * height * sizeof(uint32_t));
@@ -125,7 +125,7 @@ void window_render_from_texture(const void *pixels, size_t width, size_t height,
 
     size_t total_pixels = width * height;
 
-    if (bpp == 32) {
+    if(bpp == 32) {
         memcpy(g_screen_buffer, pixels, total_pixels * sizeof(uint32_t));
     }
 

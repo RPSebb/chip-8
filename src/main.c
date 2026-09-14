@@ -20,12 +20,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // 1. Calcul de la taille du fichier
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    // 2. Vérification de la taille max autorisée (3584 octets max)
     #define MAX_ROM_SIZE (4096 - 0x200)
 
     if(size > MAX_ROM_SIZE) {
@@ -34,7 +32,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // 3. Lecture DIRECTE dans la RAM à partir de 0x200
     size_t bytes_read = fread(&ram[0x200], 1, size, f);
     fclose(f);
 

@@ -1,4 +1,4 @@
-#define COBJMACROS   // permet d'utiliser les macros C (IUnknown_Release, etc.) sur les interfaces COM
+#define COBJMACROS
 #define _USE_MATH_DEFINES
 #define INITGUID
 #include <stdio.h>
@@ -7,21 +7,18 @@
 #include <math.h>
 #include "../include/audio.h"
 
-// ---- Config de l'onde ----
-#define TONE_FREQ_HZ   440.0   // Mi — un poil plus grave, moins strident qu'un 440Hz carré
-#define AMPLITUDE      0.25    // volume objectif, indépendant du mixer système
+#define TONE_FREQ_HZ   440.0
+#define AMPLITUDE      0.25
 
-// ---- État global du module ----
 static IAudioClient*        g_audio_client = NULL;
 static IAudioRenderClient*  g_render_client = NULL;
 static HANDLE               g_audio_event = NULL;
 static HANDLE               g_thread = NULL;
-static volatile LONG        g_running = 0;   // 0/1, contrôle l'arrêt du thread
-static volatile LONG        g_tone_on = 0;   // 0/1, lu par le thread, écrit par le moteur CHIP-8
-
+static volatile LONG        g_running = 0;
+static volatile LONG        g_tone_on = 0;
 static WAVEFORMATEX         g_format = {0};
-static double               g_phase = 0.0;   // phase courante de l'onde, en continu entre les buffers
-static float                g_envelope = 0.0f; // fondu doux 0..1, évite les clics on/off
+static double               g_phase = 0.0;
+static float                g_envelope = 0.0f;
 
 static DWORD WINAPI audio_render_thread(LPVOID param) {
     (void)param;
@@ -38,7 +35,6 @@ static DWORD WINAPI audio_render_thread(LPVOID param) {
         return 1;
     }
 
-    // Démarre le flux audio
     hr = IAudioClient_Start(g_audio_client);
     if (FAILED(hr)) {
         printf("audio_render_thread: IAudioClient_Start failed, hr=0x%08lx\n", hr);
@@ -48,11 +44,11 @@ static DWORD WINAPI audio_render_thread(LPVOID param) {
     printf("audio_render_thread: démarré, buffer_frame_count=%u, nChannels=%u, nSamplesPerSec=%lu\n",
            buffer_frame_count, g_format.nChannels, g_format.nSamplesPerSec);
 
-    while (InterlockedCompareExchange(&g_running, 0, 0)) {
-        // Attend que WASAPI ait besoin de nouvelles données (event-driven, pas de polling actif)
+    while(InterlockedCompareExchange(&g_running, 0, 0)) {
+
         DWORD wait_result = WaitForSingleObject(g_audio_event, 2000);
-        if (wait_result != WAIT_OBJECT_0) {
-            continue; // timeout ou erreur, on re-vérifie g_running et on continue
+        if(wait_result != WAIT_OBJECT_0) {
+            continue;
         }
 
         UINT32 padding_frames = 0;
@@ -75,14 +71,14 @@ static DWORD WINAPI audio_render_thread(LPVOID param) {
             printf("audio_render_thread: tone_on = %d\n", tone_on);
             last_tone_on = tone_on;
         }
-        float* samples = (float*)data; // g_format est configuré en IEEE float, voir audio_init()
+        float* samples = (float*)data;
 
         double phase_inc = 2.0 * M_PI * TONE_FREQ_HZ / g_format.nSamplesPerSec;
 
         for (UINT32 i = 0; i < frames_available; i++) {
 
             float target = tone_on ? 1.0f : 0.0f;
-            float envelope_step = 1.0f / ((float)g_format.nSamplesPerSec / 200.0f); // ~5ms de fondu
+            float envelope_step = 1.0f / ((float)g_format.nSamplesPerSec / 200.0f);
             if (g_envelope < target) { g_envelope = fminf(g_envelope + envelope_step, target); }
             else if (g_envelope > target) { g_envelope = fmaxf(g_envelope - envelope_step, target); }
 
@@ -147,15 +143,15 @@ bool audio_init(void) {
         return false;
     }
 
-    REFERENCE_TIME buffer_duration = 20 * 10000; // 20ms, en unités de 100ns (WASAPI)
+    REFERENCE_TIME buffer_duration = 20 * 10000;
 
     hr = IAudioClient_Initialize(
         g_audio_client,
         AUDCLNT_SHAREMODE_SHARED,
         AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
         buffer_duration,
-        0, // secondary buffer, doit être 0 en mode shared
-        mix_format,   // <-- on passe le pointeur original complet, pas une copie tronquée
+        0,
+        mix_format,
         NULL
     );
 
