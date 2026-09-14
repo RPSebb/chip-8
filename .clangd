@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - "--target=x86_64-w64-windows-gnu"
+    - -xc
+    - -std=c2y
+    - "-isystemC:/mingw-w64/include"
+    - "-isystemC:/mingw-w64/x86_64-w64-mingw32ucrt/include"
